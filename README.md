@@ -375,6 +375,7 @@ At one block per metre this is what makes mountains on the horizon visible at al
 | `buildingDetailUrl`, `buildingDetailRelease`, `buildingDetailCatalog` | Overture's S3, `latest`, Overture's STAC | Where those tiles are, and which monthly release |
 | `placeTitles` | true | Show a town's name on walking into it, and the district's above the hotbar |
 | `mapWaypoints` | true | Towns and stations round you as waypoints in Xaero's Minimap and World Map (read on the client) |
+| `mapBackground` | true | The real map under the unexplored parts of Xaero's World Map, downloaded by the client from `mapTileJson` (read on the client) |
 | `perfLogSeconds` | 0 | Every this many seconds, `[perf]` lines in `logs/realearth-perf.log` on how chunk loading keeps up (0 is off); see "The running performance log" above |
 | `storeyMeters`, `maxFloors` | 4.5, 10 | Height of a storey (at least 5 blocks) and most storeys per building |
 | `villagerChance` | 0.2 | Chance that a chunk with beds gets a villager (one); about one chunk of town in twenty |
@@ -436,6 +437,15 @@ Planned features and known issues: see [ROADMAP.md](ROADMAP.md).
   own teleport has to guess a height there, which in a world 4,000 blocks deep often means inside a mountain or
   high above the sea, while this one asks the server, which finds the ground the way `/earth tp` does. Shown to
   players allowed `/earth tp` (`teleportPermissionLevel`). Works on servers with Real Earth.
+  And the real map wherever you haven't been, instead of black: seas, lakes and rivers, woods, fields, glaciers
+  and towns, deserts and tundra by their climate, and, as you zoom in, roads, railways and buildings, with what
+  you have explored drawn over it as usual. On the Earth the map zooms out to the whole globe, past its own
+  limit; beyond that limit only the real map is drawn (what you explored is under a pixel there). Your game
+  downloads the map's tiles itself as you look at them (OpenStreetMap data from OpenFreeMap, credited in the
+  map's corner), into the same cache and under the same size limit as the terrain's, so it works on any server
+  with Real Earth. For worlds in the Mercator projection (every new world); `mapBackground: false` in the config
+  turns it off. Zoomed out, squares the map saved before this version may keep a black edge round what you
+  explored until the map redraws them.
 - **Lootr** and **Distant Horizons**: see above.
 
 **For mod authors.** `se.itssimple.realearth.api` (compile against the Real Earth jar, `modCompileOnly`):
@@ -452,7 +462,8 @@ RealEarthEvents.TOWN_ENTERED.register((player, town, previous) ->
 
 ## Development
 
-Requires Java 25.
+Requires Java 25 installed. Gradle runs on it even when started from an older JVM, such as an IDE's
+(`gradle/gradle-daemon-jvm.properties`).
 
 ```bash
 ./gradlew build          # build/libs/realearth-<version>.jar
@@ -467,8 +478,9 @@ Requires Java 25.
 Distant Horizons, Jade and Xaero's Minimap and World Map are compile-only dependencies: download
 `DistantHorizons-3.3.3-26.1.2-fabric-neoforge.jar`, `Jade-mc26.1-Fabric-26.1.9.jar`,
 `xaerominimap-fabric-26.1.2-26.6.1.jar` and `xaeroworldmap-fabric-26.1.2-1.47.2.jar` into `libs/` before building,
-with `xaerolib-fabric-26.1.2-1.8.3.jar` taken out of the minimap's `META-INF/jars`. To try them in
-`./gradlew runClient`, put them in `run/mods/` too. `-PshotHud=true` keeps the HUD in screenshots, for what those
+with `xaerolib-fabric-26.1.2-1.8.3.jar` taken out of the minimap's `META-INF/jars`. `./gradlew runClient` loads
+Xaero's Minimap and World Map from `libs/` when they are there; for the other mods, or other runs, put them in
+that run's `mods/` folder. `-PshotHud=true` keeps the HUD in screenshots, for what those
 mods show. The elevation tile approach (global sample grid, pixel-centre sampling,
 the 404-over-ocean behaviour) carried over from the GeoWorld project.
 
@@ -497,8 +509,8 @@ players see it when they join or arrive on Earth.
 
 - Elevation: Terrain Tiles on AWS (Mapzen): USGS 3DEP, SRTM and GMTED2010, NOAA ETOPO1, Copernicus EU-DEM and
   national data from Australia, Austria, Canada, Mexico, New Zealand, Norway and the UK, and ArcticDEM.
-- Water, roads, railways and bridges: © OpenStreetMap contributors (ODbL), served as vector tiles by OpenFreeMap
-  in the OpenMapTiles schema (© OpenMapTiles).
+- Water, roads, railways and bridges, and the map under Xaero's World Map: © OpenStreetMap contributors (ODbL),
+  served as vector tiles by OpenFreeMap in the OpenMapTiles schema (© OpenMapTiles).
 - Roof shapes, roof and facade colours, and building parts: Overture Maps Foundation, buildings theme (from
   OpenStreetMap and others), ODbL 1.0, © OpenStreetMap contributors.
 - Land cover: ESA WorldCover 10 m 2021 v200, © ESA WorldCover project / contains modified Copernicus Sentinel
